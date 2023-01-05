@@ -8,8 +8,8 @@ from spacy.matcher import Matcher
 from pyresparser import ResumeParser
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
+from logger import configLogger
 
-logging.basicConfig(filename='email_processing.log', encoding='utf-8', level=logging.INFO)
 
 # Auth Details 
 # @ToDo: Get a better way to fetch the details 
@@ -60,7 +60,6 @@ def processBody(body):
         except IndexError:
             pass
     
-    # Skills
     
     return email, number
 
@@ -184,7 +183,7 @@ for email_uid in uid_list[-2:]:
                 state,data = client.uid("MOVE", email_uid, "INBOX.errors")
         except:
             state,data = client.uid("MOVE", email_uid, "INBOX.errors")
-            print("Unable to process email",res)
+            print("Unable to process , moved to errors",res)
     else:
         # Error Handling (@ToDO)
         state,data = client.uid("MOVE", email_uid, "INBOX.errors")

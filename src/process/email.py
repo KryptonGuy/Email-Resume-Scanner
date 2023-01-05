@@ -1,13 +1,21 @@
 import imaplib
-import os
 from fileops.azureClient import AzureBlobClient
 import tempfile
 from config import EMAIL, SERVER, PASSWORD
+from .convert_attachment import extract_text_from_pdf
+from parser.text_parser import parse_text
+import json
+from logger import getLogger
 
+logger = getLogger(__name__)
+
+logger.error("error")
 class EmailClient():
     def __init__(self):
         #self.imap = imaplib.IMAP4_SSL(os.environ['EMAIL_IMAP_DOMAIN'])
         self.imap = imaplib.IMAP4_SSL(SERVER)
+        print("helllo")
+        logger.debug("Initialise EMail")
 
     def login(self):
         #self.imap.login(os.environ['EMAIL_LOGIN'], os.environ['EMAIL_PASSWORD'])
@@ -33,10 +41,6 @@ class EmailClient():
     def move_uid_to_processed(self, email_uid, folder="INBOX.processed"):
         return self.imap.uid("MOVE", email_uid, folder)
 
-        if state!="OK":
-            print("Unable to move email",state)
-            self.move_uid_to_error(email_uid)
-    
     def move_uid_to_error(self,email_uid, folder="INBOX.errors"):
         return self.imap.uid("MOVE", email_uid, folder)
 
@@ -117,18 +121,27 @@ class Email():
                 if "attachment" in content_disposition:
                     # download attachment
                     filename = email_part.get_filename()
-                    #AzureBlobClient.write_to_blob(filename, email_part.get_payload(decode=True))
+                    print(filename)
+                    some = AzureBlobClient()
+                    some.write_to_blob(filename, email_part.get_payload(decode=True))
                     temp = tempfile.TemporaryFile(mode='w+b')
                     temp.write(email_part.get_payload(decode=True))
+                    print(temp)
+                    print(type(temp))
+                    attachment_text = extract_text_from_pdf(temp)
+                    print(attachment_text)
+                    json_text = parse_text(attachment_text)
+                    some.write_to_blob(filename, json.dumps(json_text))
                     attachments.append(temp)
 
-            return attachments
+            return filename
         else:
             content_disposition = str(email_part.get("Content-Disposition"))
             if "attachment" in content_disposition:
                     # download attachment
                     filename = email_part.get_filename()
-                    #AzureBlobClient.write_to_blob(filename, email_part.get_payload(decode=True))
+                    some = AzureBlobClient()
+                    some.write_to_blob(filename, email_part.get_payload(decode=True))
                     temp = tempfile.TemporaryFile(mode='w+b')
                     temp.write(email_part.get_payload(decode=True))
                     return temp
