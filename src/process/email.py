@@ -143,7 +143,7 @@ class Email():
                     # Write attachment to a temporary file
                     temp = tempfile.TemporaryFile(mode='w+b')
                     temp.write(email_part.get_payload(decode=True))
-    
+                    
                     attachments.append((temp, filename))
 
             return attachments
@@ -155,7 +155,7 @@ class Email():
                     logger.info(f"Attachment with filename {filename} found")
 
                     # Write attachment to a temporary file
-                    temp = tempfile.TemporaryFile(mode='w+b')
+                    temp = tempfile.NamedTemporaryFile(mode='w+b')
                     temp.write(email_part.get_payload(decode=True))
 
                     return [(temp, filename)]

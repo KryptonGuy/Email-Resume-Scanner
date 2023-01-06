@@ -14,17 +14,20 @@ class AzureBlobClient:
     #     pass
 
     def write_to_blob(self, path, data):
-        # blob_service_client = BlobServiceClient(self.account_url, credential=self.default_credential)
-        # blob_client = blob_service_client.get_blob_client(container="container_name", blob=path)
-        # blob_client.upload_blob(data)
-        if type(data) == str:
-            with open(f"files/{path}", 'w') as file:
-                file.write(data)
-        else:
-            with open(f"files/{path}", 'wb') as file:
-                file.write(data)
+        blob_service_client = BlobServiceClient(self.account_url, credential=self.default_credential)
+        blob_client = blob_service_client.get_blob_client(container="container_name", blob=path)
+        blob_client.upload_blob(data)
 
         pass
+
+    def save_on_local(self, name, data):
+        
+        if type(data) == str:
+            with open(f"files/{name}", 'w') as file:
+                file.write(data)
+        else:
+            with open(f"files/{name}", 'wb') as file:
+                file.write(data)
 
     
 

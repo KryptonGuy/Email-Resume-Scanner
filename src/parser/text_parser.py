@@ -97,7 +97,7 @@ class TextParser:
         json = {
             "Name" : self.extract_names_from_text(),
             "Email": self.extract_email_from_text(),
-            "Number": self.extract_phnum_from_text(),
+            "PhNum": self.extract_phnum_from_text(),
             "Locations": self.extract_location_from_text(),
             "Skills": self.extract_skills()
 

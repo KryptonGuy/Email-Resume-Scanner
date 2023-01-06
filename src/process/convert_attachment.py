@@ -14,6 +14,7 @@ from io import StringIO
 #     return extract_text(pdf_path)
 
 def extract_text_from_pdf(file):
+    file.seek(0)
     output_string = StringIO()
 
 
@@ -27,16 +28,17 @@ def extract_text_from_pdf(file):
 
     return output_string.getvalue()
 
-def extract_text_from_docx(docx_path):
-    txt = docx2txt.process(docx_path)
+def extract_text_from_docx(file):
+    
+    txt = docx2txt.process(file.name)
     if txt:
         return txt.replace('\t', ' ')
     return None
 
-def doc_to_text_catdoc(file_path):
+def doc_to_text_catdoc(file):
     try:
         process = subprocess.Popen(  
-            ['catdoc', '-w', file_path],
+            ['catdoc', '-w', file.name],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
@@ -56,12 +58,15 @@ def doc_to_text_catdoc(file_path):
 def extract_text_from_file(file, name):
 
     name_tup = os.path.splitext(name)
-    extention = name_tup[0]
-
+    extention = name_tup[1]
+    print(extention)
     if extention == ".pdf":
         return extract_text_from_pdf(file)
-    elif extention=="doc":
-        return 
+    elif extention==".docx":
+        return extract_text_from_docx(file)
+    elif extention==".doc":
+        return doc_to_text_catdoc(file)
+
 
 
 
