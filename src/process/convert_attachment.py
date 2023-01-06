@@ -7,7 +7,7 @@ from pdfminer.layout import LAParams
 from pdfminer.pdfdocument import PDFDocument
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.pdfpage import PDFPage
-
+import os
 from io import StringIO
 
 # def extract_text_from_pdf(pdf_path):
@@ -52,4 +52,17 @@ def doc_to_text_catdoc(file_path):
         stdout, stderr = process.communicate()
  
     return (stdout.strip(), stderr.strip())
+
+def extract_text_from_file(file, name):
+
+    name_tup = os.path.splitext(name)
+    extention = name_tup[0]
+
+    if extention == ".pdf":
+        return extract_text_from_pdf(file)
+    elif extention=="doc":
+        return 
+
+
+
 

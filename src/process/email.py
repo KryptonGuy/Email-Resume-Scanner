@@ -1,15 +1,9 @@
 import imaplib
-from fileops.azureClient import AzureBlobClient
 import tempfile
 from config import EMAIL, SERVER, PASSWORD
-from .convert_attachment import extract_text_from_pdf
-from parser.text_parser import parse_text
-import json
 from logger import getLogger
 
 logger = getLogger(__name__)
-
-logger.error("error")
 
 # Email Client to perform all operation with email server
 class EmailClient():
@@ -41,7 +35,7 @@ class EmailClient():
         self.imap.logout()
         logger.info("Email Client logged out")
     
-
+    # @ToDo Logging
     def get_emails_uid_list(self):
         res, data =self.imap.uid('search', None, "ALL")
         if res == "OK":
@@ -82,6 +76,7 @@ class Email():
         self.From = From
         self.To = To
     
+    # To extract subject, from and To from email || Funcation Name change??
     def process_email_data(self, email_message_byte):
 
         # Decode email Subject 
@@ -89,12 +84,12 @@ class Email():
         if isinstance(subject, bytes):
             subject = subject.decode()
 
-        # decode email FROM
+        # Decode email FROM
         From = email_message_byte["From"]
         if isinstance(From, bytes):
             From = From.decode()
         
-        # decode email TO
+        # Decode email TO
         To = email_message_byte["To"]
         if isinstance(To, bytes):
             To = To.decode()
@@ -103,7 +98,7 @@ class Email():
 
 
 
-
+    # Extract body from email
     def get_body(self,email_message_byte):
 
 
@@ -114,6 +109,7 @@ class Email():
                 content_type = email_part.get_content_type()
                 content_disposition = str(email_part.get("Content-Disposition"))
 
+                # Return body if part is palin text
                 if content_type == "text/plain" and "attachment" not in content_disposition:
                    return email_part.get_payload(decode=True).decode()
         else:
@@ -126,8 +122,11 @@ class Email():
                 return None
 
 
-    def process_attachments(self):
+    # Returns List of attachemnts (Temporary file) and File name
+    def get_attachments(self):
+
         attachments = []
+
         if self.email_message_byte.is_multipart():
 
             for email_part in self.email_message_byte.walk():
@@ -136,35 +135,33 @@ class Email():
 
                 # Get Attachment from message
                 if "attachment" in content_disposition:
-                    # download attachment
+
+                    # Get File name
                     filename = email_part.get_filename()
-                    print(filename)
-                    some = AzureBlobClient()
-                    some.write_to_blob(filename, email_part.get_payload(decode=True))
+                    logger.info(f"Attachment with filename {filename} found")
+
+                    # Write attachment to a temporary file
                     temp = tempfile.TemporaryFile(mode='w+b')
                     temp.write(email_part.get_payload(decode=True))
-                    print(temp)
-                    print(type(temp))
-                    attachment_text = extract_text_from_pdf(temp)
-                    print(attachment_text)
-                    json_text = parse_text(attachment_text)
-                    some.write_to_blob(filename, json.dumps(json_text))
-                    attachments.append(temp)
+    
+                    attachments.append((temp, filename))
 
-            return filename
+            return attachments
         else:
             content_disposition = str(email_part.get("Content-Disposition"))
             if "attachment" in content_disposition:
-                    # download attachment
+                   # Get File name
                     filename = email_part.get_filename()
-                    some = AzureBlobClient()
-                    some.write_to_blob(filename, email_part.get_payload(decode=True))
+                    logger.info(f"Attachment with filename {filename} found")
+
+                    # Write attachment to a temporary file
                     temp = tempfile.TemporaryFile(mode='w+b')
                     temp.write(email_part.get_payload(decode=True))
-                    return temp
+
+                    return [(temp, filename)]
 
             else:
-                return []
+                return attachments
 
 
                     
