@@ -18,7 +18,7 @@ client = EmailClient()
 client.login()
 
 # mail box selection
-client.seleteFolder("INBOX.test")
+client.selectFolder("INBOX.test")
 
 # Get the list of uid to be fetched
 

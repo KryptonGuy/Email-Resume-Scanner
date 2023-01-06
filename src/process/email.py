@@ -10,23 +10,37 @@ from logger import getLogger
 logger = getLogger(__name__)
 
 logger.error("error")
+
+# Email Client to perform all operation with email server
 class EmailClient():
+
     def __init__(self):
         #self.imap = imaplib.IMAP4_SSL(os.environ['EMAIL_IMAP_DOMAIN'])
         self.imap = imaplib.IMAP4_SSL(SERVER)
-        print("helllo")
-        logger.debug("Initialise EMail")
 
     def login(self):
-        #self.imap.login(os.environ['EMAIL_LOGIN'], os.environ['EMAIL_PASSWORD'])
-        self.imap.login(EMAIL, PASSWORD)
+        try:
+            #self.imap.login(os.environ['EMAIL_LOGIN'], os.environ['EMAIL_PASSWORD'])
+            self.imap.login(EMAIL, PASSWORD)
+            logger.info("Successfully logged into email server ")
 
-    def seleteFolder(self, folder, readonly=True):
-        self.imap.select(folder, readonly)
+        except Exception as e:
+            logger.critical(f"Failed to Logged into the email server: {e}")
+            self.logout()
+
+    def selectFolder(self, folder, readonly=True):
+        try:
+            self.imap.select(folder, readonly)
+            logger.info(f"{folder} folder has been selected.")
+        except Exception as e:
+            logger.error(f"Unable to select folder. Exception {e}")
+            self.logout()
 
     def logout(self):
         self.imap.close()
-        self.imap.logout()    
+        self.imap.logout()
+        logger.info("Email Client logged out")
+    
 
     def get_emails_uid_list(self):
         res, data =self.imap.uid('search', None, "ALL")
@@ -39,15 +53,18 @@ class EmailClient():
         return uid_list
 
     def move_uid_to_processed(self, email_uid, folder="INBOX.processed"):
+        logger.info(f"Moving {email_uid} to {folder}")
         return self.imap.uid("MOVE", email_uid, folder)
 
     def move_uid_to_error(self,email_uid, folder="INBOX.errors"):
+        logger.info(f"Moving {email_uid} to {folder}")
         return self.imap.uid("MOVE", email_uid, folder)
 
     def search_unread(self):
         return self.imap.uid('search', '(UNSEEN)')
 
     def get_email(self, uid: str):
+        logger.info(f"Getting email uid {uid}")
         return self.imap.uid('FETCH', str(uid), '(RFC822)')
 
     
