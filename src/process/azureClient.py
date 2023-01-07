@@ -4,7 +4,7 @@ from logger import getLogger
 
 logger = getLogger(__name__)
 
-class AzureBlobClient:
+class AzureClient:
     def __init__(self) -> None:
         self.account_url = "https://<storageaccountname>.blob.core.windows.net" 
         self.default_credential = DefaultAzureCredential()

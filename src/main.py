@@ -1,7 +1,7 @@
 import email
 import json
 from parser.text_parser import TextParser
-from process.azureClient import AzureBlobClient
+from process.azureClient import AzureClient
 from process.email import EmailClient, Email
 from process.convert_attachment import extract_text_from_file
 import traceback
@@ -39,7 +39,7 @@ logger = getLogger(__name__)
 client = EmailClient()
 client.login()
 
-azure = AzureBlobClient()
+azure = AzureClient()
 
 # mail box selection
 client.selectFolder("INBOX.test")
@@ -53,12 +53,13 @@ for email_uid in uid_list[-2:]:
     res, data = client.get_email(email_uid)
     logger.info(f"Response to get {email_uid} email uid {res}")
 
+    # MetaData for each email
     metadata = dict()
 
     if res=="OK":
 
         raw_email = data[0][1]
-        # raw_email_string = raw_email.decode('utf-8')
+
         email_message_bytes = email.message_from_bytes(raw_email)
 
         try:
@@ -103,28 +104,24 @@ for email_uid in uid_list[-2:]:
 
                 fileobj.close()
 
-
-
-            state,data = client.move_uid_to_processed(email_uid)
-            if state!="OK":
-                print("Unable to move email",state)
-                state,data = client.move_uid_to_error(email_uid)
-
-
         except Exception:
-            print(traceback.format_exc())
+            logger.error(f"Error while processing email {email_uid}. Traceback \n {traceback.format_exc()}")
             state,data = client.move_uid_to_error(email_uid)
-            print("main Unable to process email",res)
+
 
         metadata["ParseData"] = parseData
         
         # Save MetaData for email
         azure.save_on_local(f"{parseData['Name']}_metadata.json", json.dumps(metadata))
 
+        state,data = client.move_uid_to_processed(email_uid)
+        if state!="OK":
+                logger.error(f"Error while moving email {email_uid}. Response {state}")
+                state,data = client.move_uid_to_error(email_uid)
+
     else:
-        # Error Handling (@ToDO)
+        logger.error(f"Error while fetching email {email_uid}. Response {res}")
         state,data = client.move_uid_to_error(email_uid)
-        print("Unable to fetch email",res)
         continue
     
 
