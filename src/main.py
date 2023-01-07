@@ -9,17 +9,14 @@ from logger import getLogger
 
 def add_body_resume_data(bodyJson, resumeJson):
 
-    if not bodyJson["Name"]:
-        if resumeJson["Name"]:
-            bodyJson["Name"] = resumeJson["Name"]
+    if resumeJson["Name"]:
+        bodyJson["Name"] = resumeJson["Name"]
 
-    if not bodyJson["Email"]:
-        if resumeJson["Email"]:
-            bodyJson["Email"] = resumeJson["Email"]
+    if resumeJson["Email"]:
+        bodyJson["Email"] = resumeJson["Email"]
 
-    if not bodyJson["PhNum"]:
-        if resumeJson["PhNum"]:
-            bodyJson["PhNum"] = resumeJson["PhNum"]
+    if resumeJson["PhNum"]:
+        bodyJson["PhNum"] = resumeJson["PhNum"]
 
     if not bodyJson["Locations"]:
         if resumeJson["Locations"]:
@@ -87,9 +84,6 @@ for email_uid in uid_list[-2:]:
                 # Reset pointer before read
                 fileobj.seek(0)
 
-                # @ToDo Save it on azure blob
-                azure.save_on_local(filename, fileobj.read())
-
                 # Extract text from the file
                 text_from_file = extract_text_from_file(fileobj, filename)
 
@@ -101,6 +95,9 @@ for email_uid in uid_list[-2:]:
 
                 # Temp
                 # azure.save_on_local(f"{filename}_parsed.json", json.dumps(attach_parse_data))
+
+                # @ToDo Save it on azure blob
+                azure.save_on_local(f"{parseData['Name']}_{filename}", fileobj.read())
 
                 fileobj.close()
 
