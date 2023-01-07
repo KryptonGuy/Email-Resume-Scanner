@@ -1,5 +1,9 @@
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
+from logger import getLogger
+
+logger = getLogger(__name__)
+
 class AzureBlobClient:
     def __init__(self) -> None:
         self.account_url = "https://<storageaccountname>.blob.core.windows.net" 
@@ -20,13 +24,16 @@ class AzureBlobClient:
 
         pass
 
+    # (Temporary) For Local Use only
     def save_on_local(self, name, data):
         
         if type(data) == str:
             with open(f"files/{name}", 'w') as file:
+                logger.info(f"Saving file {name} on local")
                 file.write(data)
         else:
             with open(f"files/{name}", 'wb') as file:
+                logger.info(f"Saving file {name} on local")
                 file.write(data)
 
     

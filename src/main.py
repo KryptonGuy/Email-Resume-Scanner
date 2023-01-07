@@ -1,7 +1,7 @@
 import email
 import json
 from parser.text_parser import TextParser
-from fileops.azureClient import AzureBlobClient
+from process.azureClient import AzureBlobClient
 from process.email import EmailClient, Email
 from process.convert_attachment import extract_text_from_file
 import traceback
@@ -25,7 +25,8 @@ def add_body_resume_data(bodyJson, resumeJson):
         if resumeJson["Locations"]:
             bodyJson["Locations"] = resumeJson["Locations"]
     
-    bodyJson["Skills"].extend(resumeJson["Skills"])
+    if bodyJson["Skills"] and resumeJson["Skills"]:
+        bodyJson["Skills"] = list(set(bodyJson["Skills"]) | set(resumeJson["Skills"]))
 
     return bodyJson
     
@@ -71,9 +72,9 @@ for email_uid in uid_list[-2:]:
 
 
             body = email_instance.body
-
             bodyparser = TextParser(body)
             parseData= bodyparser.get_parsed_json()
+
 
             # azure.save_on_local(f"{email_uid}_body_parsed.json", json.dumps(parseData))
 
@@ -99,6 +100,8 @@ for email_uid in uid_list[-2:]:
 
                 # Temp
                 # azure.save_on_local(f"{filename}_parsed.json", json.dumps(attach_parse_data))
+
+                fileobj.close()
 
 
 

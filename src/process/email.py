@@ -1,7 +1,10 @@
 import imaplib
 import tempfile
-from config import EMAIL, SERVER, PASSWORD
 from logger import getLogger
+
+# @ToDo change the way to fetch Creds
+from config import EMAIL, SERVER, PASSWORD
+
 
 logger = getLogger(__name__)
 
@@ -9,23 +12,21 @@ logger = getLogger(__name__)
 class EmailClient():
 
     def __init__(self):
-        #self.imap = imaplib.IMAP4_SSL(os.environ['EMAIL_IMAP_DOMAIN'])
         self.imap = imaplib.IMAP4_SSL(SERVER)
 
     def login(self):
         try:
-            #self.imap.login(os.environ['EMAIL_LOGIN'], os.environ['EMAIL_PASSWORD'])
             self.imap.login(EMAIL, PASSWORD)
-            logger.info("Successfully logged into email server ")
+            logger.info("Successfully logged into the email server ")
 
         except Exception as e:
-            logger.critical(f"Failed to Logged into the email server: {e}")
+            logger.critical(f"Cannot connect to the email server.  \n {e.with_traceback()}")
             self.logout()
 
     def selectFolder(self, folder, readonly=True):
         try:
             self.imap.select(folder, readonly)
-            logger.info(f"{folder} folder has been selected.")
+            logger.info(f"{folder} folder has been chosen.")
         except Exception as e:
             logger.error(f"Unable to select folder. Exception {e}")
             self.logout()
@@ -35,14 +36,14 @@ class EmailClient():
         self.imap.logout()
         logger.info("Email Client logged out")
     
-    # @ToDo Logging
     def get_emails_uid_list(self):
         res, data =self.imap.uid('search', None, "ALL")
         if res == "OK":
             decoded_data =data[0].decode()
             uid_list = decoded_data.split()
+            logger.info(f"Fetching uids. {len(uid_list)} new emails found.")
         else:
-            raise Exception("Unable to fetch UIDs")
+            logger.error(f"Unable to search uids. Response: {res}")
 
         return uid_list
 
@@ -69,15 +70,15 @@ class Email():
     def __init__(self, uuid, email_message_byte) -> None:
         self.uuid = uuid
         self.email_message_byte = email_message_byte
-        subject, From, To = self.process_email_data(email_message_byte)
+        subject, From, To = self.get_header_data(email_message_byte)
 
         self.body = self.get_body(email_message_byte)
         self.subject = subject
         self.From = From
         self.To = To
     
-    # To extract subject, from and To from email || Funcation Name change??
-    def process_email_data(self, email_message_byte):
+    # To extract subject, From and To from email
+    def get_header_data(self, email_message_byte):
 
         # Decode email Subject 
         subject = email_message_byte["Subject"]
@@ -109,7 +110,7 @@ class Email():
                 content_type = email_part.get_content_type()
                 content_disposition = str(email_part.get("Content-Disposition"))
 
-                # Return body if part is palin text
+                # Return body if part is plain text
                 if content_type == "text/plain" and "attachment" not in content_disposition:
                    return email_part.get_payload(decode=True).decode()
         else:
@@ -119,7 +120,8 @@ class Email():
             if content_type == "text/plain" and "attachment" not in content_disposition:
                 return email_part.get_payload(decode=True).decode()
             else:
-                return None
+                logger.info("No body found for the email.")
+                return ""
 
 
     # Returns List of attachemnts (Temporary file) and File name
@@ -141,10 +143,11 @@ class Email():
                     logger.info(f"Attachment with filename {filename} found")
 
                     # Write attachment to a temporary file
-                    temp = tempfile.TemporaryFile(mode='w+b')
-                    temp.write(email_part.get_payload(decode=True))
-                    
-                    attachments.append((temp, filename))
+                    tempf = tempfile.TemporaryFile(mode='w+b')
+                    tempf.write(email_part.get_payload(decode=True))
+                    logger.info(f"Created a temporary file {filename} at {tempf.name}")
+
+                    attachments.append((tempf, filename))
 
             return attachments
         else:
@@ -155,13 +158,11 @@ class Email():
                     logger.info(f"Attachment with filename {filename} found")
 
                     # Write attachment to a temporary file
-                    temp = tempfile.NamedTemporaryFile(mode='w+b')
-                    temp.write(email_part.get_payload(decode=True))
+                    tempf = tempfile.NamedTemporaryFile(mode='w+b')
+                    tempf.write(email_part.get_payload(decode=True))
+                    logger.info(f"Created a temporary file {filename} at {tempf.name}")
 
-                    return [(temp, filename)]
+                    return [(tempf, filename)]
 
             else:
                 return attachments
-
-
-                    
